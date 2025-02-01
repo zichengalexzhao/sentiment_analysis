@@ -1,6 +1,7 @@
-dash
 pandas
-plotly
-wordcloud
-gunicorn
 textblob
+nltk
+plotly
+dash
+gunicorn
+wordcloud
