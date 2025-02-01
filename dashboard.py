@@ -193,4 +193,97 @@ app.layout = html.Div([
     
     html.Div([
         html.Label("Select Airline:"),
-        dcc.Dropdown
+        dcc.Dropdown(
+            id='airline-dropdown',
+            options=airline_options,
+            value='all',
+            clearable=False,
+            style={'width': '50%'}
+        )
+    ], style={'padding': '20px', 'textAlign': 'center'}),
+    
+    dcc.Graph(id='sentiment-pie-chart'),
+    dcc.Graph(id='sentiment-line-chart'),
+    dcc.Graph(id='sentiment-airline-bar-chart'),
+    dcc.Graph(id='sentiment-polarity-histogram'),
+    
+    html.Div([
+        html.H3("Wordcloud Analysis"),
+        html.Img(id='wordcloud-image', style={
+            'width': '80%',
+            'display': 'block',
+            'margin-left': 'auto',
+            'margin-right': 'auto'
+        })
+    ], style={'padding': '20px', 'textAlign': 'center'})
+])
+
+# Define callback to update charts and wordcloud based on the selected airline
+@app.callback(
+    [Output('sentiment-pie-chart', 'figure'),
+     Output('sentiment-line-chart', 'figure'),
+     Output('sentiment-airline-bar-chart', 'figure'),
+     Output('sentiment-polarity-histogram', 'figure'),
+     Output('wordcloud-image', 'src')],
+    [Input('airline-dropdown', 'value')]
+)
+def update_charts(selected_airline):
+    if selected_airline == 'all':
+        df_filtered = df_dash.copy()
+    else:
+        df_filtered = df_dash[df_dash['airline'] == selected_airline]
+    
+    # 1. Overall Sentiment Distribution (Pie Chart)
+    sentiment_counts = df_filtered['computed_sentiment'].value_counts().reset_index()
+    sentiment_counts.columns = ['sentiment', 'count']
+    fig_pie = px.pie(
+        sentiment_counts,
+        values='count',
+        names='sentiment',
+        title='Overall Sentiment Distribution'
+    )
+    
+    # 2. Sentiment Trends Over Time (Line Chart)
+    sentiment_time = df_filtered.groupby(['tweet_date', 'computed_sentiment']).size().reset_index(name='count')
+    fig_line = px.line(
+        sentiment_time,
+        x='tweet_date',
+        y='count',
+        color='computed_sentiment',
+        title='Sentiment Trends Over Time'
+    )
+    
+    # 3. Sentiment Distribution by Airline (Grouped Bar Chart)
+    airline_sentiment = df_filtered.groupby(['airline', 'computed_sentiment']).size().reset_index(name='count')
+    fig_bar = px.bar(
+        airline_sentiment,
+        x='airline',
+        y='count',
+        color='computed_sentiment',
+        barmode='group',
+        title='Sentiment Distribution by Airline'
+    )
+    
+    # 4. Distribution of Sentiment Polarity (Histogram)
+    fig_hist = px.histogram(
+        df_filtered,
+        x='polarity',
+        nbins=30,
+        title='Distribution of Sentiment Polarity'
+    )
+    
+    # 5. Wordcloud Analysis
+    text_for_wc = " ".join(df_filtered["clean_text"].dropna().tolist())
+    if not text_for_wc.strip():
+        text_for_wc = "No text available"
+    wc = WordCloud(width=800, height=400, background_color='white').generate(text_for_wc)
+    img = io.BytesIO()
+    wc.to_image().save(img, format='PNG')
+    img.seek(0)
+    wordcloud_src = "data:image/png;base64," + base64.b64encode(img.getvalue()).decode()
+    
+    return fig_pie, fig_line, fig_bar, fig_hist, wordcloud_src
+
+# Only run the Dash server when this script is executed directly.
+if __name__ == '__main__':
+    app.run_server(debug=True)
