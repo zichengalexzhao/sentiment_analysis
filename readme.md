@@ -14,4 +14,4 @@ This project focuses on analyzing a dataset of tweets related to six major U.S. 
 
 ## Live Demo
 
-Check out the interactive Sentiment Analysis Dashboard here: [https://sentiment-dashboard-123-9d1f22ef9453.herokuapp.com/](https://sentiment-dashboard-123-9d1f22ef9453.herokuapp.com/)
+Check out the interactive Sentiment Analysis Dashboard here: [Dashboard](https://sentiment-dashboard-123-9d1f22ef9453.herokuapp.com/)
